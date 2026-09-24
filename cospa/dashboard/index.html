@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>コスパPC ダッシュボード</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--line:#262b36;--fg:#e8eaf0;--mut:#9aa3b2;--acc:#5ec1ff;--good:#7ee787;--warn:#ffb454;--bad:#ff7b72}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif}
+header{display:flex;gap:14px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:9}
+h1{font-size:18px;margin:0;white-space:nowrap}
+#gen{color:var(--mut);font-size:12px}
+button{background:#1f6feb;color:#fff;border:0;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px}
+button:disabled{opacity:.5}
+#filters{display:flex;flex-wrap:wrap;gap:8px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+#filters select,#filters input[type=text]{background:#0d0f13;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:13px}
+#filters label{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:4px}
+main{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 18px}
+@media(max-width:1100px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.card h2{font-size:14px;margin:0 0 8px;color:var(--acc)}
+.card.wide{grid-column:1/-1}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{position:sticky;top:0;text-align:left;color:var(--mut);font-weight:600;border-bottom:1px solid var(--line);padding:4px 6px;background:var(--panel)}
+td{padding:4px 6px;border-bottom:1px solid #1d2129;vertical-align:top}
+tr:hover td{background:#1b202a}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;margin-right:4px}
+.b-new{background:#123a1d;color:var(--good)}.b-used{background:#3a2c10;color:var(--warn)}
+.b-deal{background:#4d1f7a;color:#d8b4fe}.b-out{background:#3a1414;color:var(--bad)}
+.b-src{background:#1c2f45;color:#8ab4e8}
+.b-ok{background:#0d3320;color:#4ade80}.b-warn{background:#3a2e10;color:#fbbf24}
+.b-drop{background:#0f2e3a;color:#22d3ee}
+.stock-out{opacity:.45}
+.scroll{max-height:430px;overflow:auto}
+svg{width:100%;height:auto;display:block}
+.dot{opacity:.75}.dot.deal{stroke:#d8b4fe;stroke-width:2.5}
+.dot.out{opacity:.2}
+#tip{position:fixed;pointer-events:none;background:#000d;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;max-width:360px;display:none;z-index:99}
+.metric-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.metric-btns button{background:#232936;color:var(--fg)}
+.metric-btns button.on{background:#1f6feb}
+.small{font-size:11px;color:var(--mut)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin-top:6px}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+</style>
+</head>
+<body>
+<header>
+<h1>コスパPC ダッシュボード</h1>
+<span id="gen">-</span>
+<button id="btn-refresh">データ更新</button>
+<span id="status" class="small"></span>
+</header>
+<div id="filters">
+<select id="f-cat"><option value="">全カテゴリ</option></select>
+<select id="f-cond"><option value="">新品+中古</option><option value="new">新品</option><option value="used">中古</option></select>
+<select id="f-shop"><option value="">全ショップ</option></select>
+<label><input type="checkbox" id="f-stock" checked>在庫/購入可能のみ</label>
+<label><input type="checkbox" id="f-scored" checked>スコアありのみ</label>
+<input type="text" id="f-q" placeholder="検索 (例: RTX 5070)" size="18">
+</div>
+<main>
+<div class="card wide">
+<h2>価格 × 性能 散布図（対数軸・下に行くほどコスパ良）</h2>
+<div class="metric-btns" id="metric-btns">
+<button data-m="gpu_pts_per_man" class="on">GPU性能</button>
+<button data-m="cpu_pts_per_man">CPU性能</button>
+<button data-m="llm_gb_per_man">AI/LLM メモリ</button>
+<button data-m="perf_per_yen_w">ワット効率</button>
+</div>
+<svg id="scatter" viewBox="0 0 1200 480"></svg>
+<div class="legend" id="legend"></div>
+<div class="small" id="scatter-note"></div>
+</div>
+<div class="card"><h2>コスパランキング</h2><div class="scroll"><table id="rank-table"></table></div></div>
+<div class="card"><h2>割安検出（市場価格より安い）</h2><div class="scroll"><table id="deal-table"></table></div></div>
+<div class="card wide"><h2>全リスト</h2><div class="scroll"><table id="all-table"></table></div></div>
+</main>
+<div id="tip"></div>
+<script>
+let DATA=null, METRIC='gpu_pts_per_man';
+const CAT_COLORS={desktop:'#5ec1ff',laptop:'#7ee787',minipc:'#c9a2ff',cpu:'#ffb454',gpu:'#ff7b72',memory:'#8ab4e8',ssd:'#63d2c9',motherboard:'#e6c07b',psu:'#b0b7c3',other:'#666'};
+const fmtYen=n=>n?('¥'+Math.round(n).toLocaleString()):'-';
+const fmt=n=>n==null?'-':(n>=1000?Math.round(n).toLocaleString():(+n).toFixed(1));
+
+async function load(){DATA=await(await fetch('/api/data')).json();
+ document.getElementById('gen').textContent='取得: '+(DATA.generated_at||'-')+' / '+DATA.items.length+'件';
+ buildFilters(); render();}
+function buildFilters(){
+ const cats=[...new Set(DATA.items.map(i=>i.category))].sort();
+ document.getElementById('f-cat').innerHTML='<option value="">全カテゴリ</option>'+cats.map(c=>`<option>${c}</option>`).join('');
+ const shops=[...new Set(DATA.items.map(i=>i.shop))].sort();
+ document.getElementById('f-shop').innerHTML='<option value="">全ショップ</option>'+shops.map(s=>`<option>${s}</option>`).join('');
+}
+function filtered(){
+ const cat=fEl('f-cat'),cond=fEl('f-cond'),shop=fEl('f-shop'),q=document.getElementById('f-q').value.toLowerCase();
+ const stock=document.getElementById('f-stock').checked, scored=document.getElementById('f-scored').checked;
+ return DATA.items.filter(i=>{
+   if(cat&&i.category!==cat)return false;
+   if(cond&&i.condition!==cond)return false;
+   if(shop&&i.shop!==shop)return false;
+   if(stock&&(i.in_stock===false||i.purchasable===false))return false;
+   if(scored&&!i.cpu_score&&!i.gpu_score)return false;
+   if(q&&!(i.name||'').toLowerCase().includes(q)&&(i.specs?.cpu||'')!==q&&(i.specs?.gpu||'')!==q)return false;
+   return true;
+ });
+}
+function fEl(id){return document.getElementById(id).value}
+function render(){const items=filtered();renderScatter(items);renderRank(items);renderDeals(items);renderAll(items);}
+function perf(i,m){if(m==='gpu_pts_per_man')return i.gpu_score;if(m==='cpu_pts_per_man')return i.cpu_score;
+ if(m==='llm_gb_per_man'){const uni=(i.specs?.cpu||'').match(/^m\d/);const uniGB=uni?(i.specs?.ram_gb||0)*0.75:0;return Math.max(i.vram_gb||0,uniGB)||null;}
+ if(m==='perf_per_yen_w'){const s=i.gpu_score||i.cpu_score,t=i.gpu_tdp||i.cpu_tdp;return s&&t?s/t:null}return null}
+function metricVal(i){return i[METRIC]}
+function renderScatter(items){
+ const svg=document.getElementById('scatter'),W=1200,H=480,pad={l:64,r:16,t:16,b:44};
+ const pts=items.map(i=>({i,p:i.effective_price||i.price,v:perf(i,METRIC)})).filter(d=>d.p&&d.v);
+ svg.innerHTML='';
+ if(!pts.length){svg.innerHTML='<text x=600 y=240 fill=#9aa3b2 text-anchor=middle>データなし</text>';return}
+ const xs=pts.map(d=>Math.log10(d.p)),ys=pts.map(d=>Math.log10(d.v));
+ const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+ const X=v=>pad.l+(Math.log10(v)-x0)/((x1-x0)||1)*(W-pad.l-pad.r);
+ const Y=v=>H-pad.b-(Math.log10(v)-y0)/((y1-y0)||1)*(H-pad.t-pad.b);
+ // axes ticks
+ let g='';
+ const xticks=[5000,10000,20000,30000,50000,80000,100000,150000,200000,300000,500000,800000];
+ for(const t of xticks){if(t<x0*0.9||t>x1*1.1)continue;const x=X(t);
+   g+=`<line x1=${x} y1=${H-pad.b} x2=${x} y2=${pad.t} stroke=#22262f/><text x=${x} y=${H-pad.b+16} fill=#7b8494 font-size=11 text-anchor=middle>${t>=10000?(t/10000)+'万':t}</text>`}
+ const ymin=Math.pow(10,y0),ymax=Math.pow(10,y1);
+ for(let e=Math.ceil(Math.log10(ymin));e<=Math.log10(ymax);e++){const v=Math.pow(10,e);if(v<ymin||v>ymax)continue;const y=Y(v);
+   g+=`<line x1=${pad.l} y1=${y} x2=${W-pad.r} y2=${y} stroke=#22262f/><text x=${pad.l-8} y=${y+4} fill=#7b8494 font-size=11 text-anchor=end>${v>=1000?(v/1000)+'k':v}</text>`}
+ svg.innerHTML=g;
+ const used=new Set();
+ for(const d of pts){const i=d.i;const deal=(i.deal_score||0)>=1.5;
+   const cls=(i.in_stock===false||i.purchasable===false)?'dot out':(deal?'dot deal':'dot');
+   const col=CAT_COLORS[i.category]||'#888';
+   const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+   c.setAttribute('cx',X(d.p));c.setAttribute('cy',Y(d.v));c.setAttribute('r',deal?5:3.2);
+   c.setAttribute('fill',col);c.setAttribute('class',cls);
+   c.addEventListener('mousemove',e=>tip(e,i,`perf ${fmt(d.v)}`));
+   c.addEventListener('mouseleave',()=>document.getElementById('tip').style.display='none');
+   c.addEventListener('click',()=>window.open(i.url));
+   svg.appendChild(c);
+   used.add(i.category);
+ }
+ document.getElementById('legend').innerHTML=[...used].map(c=>`<span><i style="background:${CAT_COLORS[c]}"></i>${c}</span>`).join('')
+   +'<span>◇紫枠=割安検出 / 薄=在庫なし</span>';
+ const label={gpu_pts_per_man:'GPUスコア',cpu_pts_per_man:'CPUスコア',llm_gb_per_man:'LLM用メモリGB',perf_per_yen_w:'性能/ワット'}[METRIC];
+ document.getElementById('scatter-note').textContent=`縦軸=${label}、横軸=価格。クリックで商品ページへ。`;
+}
+function tip(e,i,extra){
+ const t=document.getElementById('tip');t.style.display='block';
+ t.innerHTML=`<b>${i.name}</b><br>${fmtYen(i.effective_price||i.price)} / ${i.shop}<br>`+
+  `CPU:${i.specs?.cpu||'-'}(${fmt(i.cpu_score)}) GPU:${i.specs?.gpu||'-'}(${fmt(i.gpu_score)})<br>`+
+  `RAM:${i.specs?.ram_gb||'-'}GB VRAM:${i.vram_gb||'-'}GB ${extra}<br>`+
+  `${i.condition==='used'?'中古':'新品'} ${i.stock_note||''} deal:${fmt(i.deal_score)}`;
+ t.style.left=Math.min(e.clientX+14,innerWidth-380)+'px';t.style.top=(e.clientY+14)+'px';
+}
+function row(i,cells){
+ const badges=[i.condition==='used'?'<span class="badge b-used">中古</span>':'<span class="badge b-new">新品</span>'];
+ if(i.source_layer==='aggregator')badges.push('<span class="badge b-src">比較最安</span>');
+ if((i.deal_score||0)>=1.5)badges.push('<span class="badge b-deal">割安</span>');
+ if(i.price_drop>=5)badges.push(`<span class="badge b-drop">値下げ-${i.price_drop}%</span>`);
+ if(i.in_stock===false||i.purchasable===false)badges.push('<span class="badge b-out">在庫なし</span>');
+ const v=i.verify;
+ if(v){
+   if(v.purchasable_now&&v.price_match!==false)badges.push('<span class="badge b-ok">購入確認済</span>');
+   else if(v.price_match===false)badges.push('<span class="badge b-warn">価格相違</span>');
+   else badges.push('<span class="badge b-warn">確認不可</span>');
+ }
+ const cls=(i.in_stock===false||i.purchasable===false)?' class="stock-out"':'';
+ return `<tr${cls}><td>${badges.join('')}<a href="${i.url}" target="_blank">${i.name}</a></td>${cells}</tr>`;
+}
+function renderRank(items){
+ const ok=items.filter(i=>metricVal(i)&&!(i.in_stock===false||i.purchasable===false));
+ ok.sort((a,b)=>metricVal(b)-metricVal(a));
+ const head=`<tr><th>商品</th><th class=num>価格</th><th class=num>値/万円</th><th class=num>score</th></tr>`;
+ document.getElementById('rank-table').innerHTML=head+ok.slice(0,60).map(i=>row(i,
+  `<td class=num>${fmtYen(i.effective_price||i.price)}</td><td class=num><b>${fmt(metricVal(i))}</b></td><td class=num>${fmt(perf(i,METRIC))}</td>`)).join('');
+}
+function renderDeals(items){
+ const ok=items.filter(i=>(i.deal_score||0)>=1.2&&!(i.in_stock===false||i.purchasable===false));
+ ok.sort((a,b)=>b.deal_score-a.deal_score);
+ const head=`<tr><th>商品</th><th class=num>価格</th><th class=num>deal</th><th>CPU/GPU</th></tr>`;
+ document.getElementById('deal-table').innerHTML=head+ok.slice(0,60).map(i=>row(i,
+  `<td class=num>${fmtYen(i.effective_price||i.price)}</td><td class=num><b>${fmt(i.deal_score)}</b></td><td class=small>${i.specs?.cpu||''} / ${i.specs?.gpu||''}</td>`)).join('');
+}
+function renderAll(items){
+ const head=`<tr><th>商品</th><th class=num>価格</th><th>shop</th><th>CPU</th><th>GPU</th><th class=num>RAM</th><th class=num>VRAM</th><th>在庫</th></tr>`;
+ document.getElementById('all-table').innerHTML=head+items.slice(0,500).map(i=>row(i,
+  `<td class=num>${fmtYen(i.effective_price||i.price)}</td><td class=small>${i.shop}</td><td class=small>${i.specs?.cpu||'-'}</td><td class=small>${i.specs?.gpu||'-'}</td><td class=num>${i.specs?.ram_gb||'-'}</td><td class=num>${i.vram_gb||'-'}</td><td class=small>${i.stock_note||''}</td>`)).join('');
+}
+document.getElementById('metric-btns').addEventListener('click',e=>{
+ if(e.target.tagName!=='BUTTON')return;
+ document.querySelectorAll('#metric-btns button').forEach(b=>b.classList.remove('on'));
+ e.target.classList.add('on');METRIC=e.target.dataset.m;render();});
+for(const id of['f-cat','f-cond','f-shop','f-stock','f-scored','f-q'])
+ document.getElementById(id).addEventListener('input',()=>render());
+document.getElementById('btn-refresh').addEventListener('click',async()=>{
+ const b=document.getElementById('btn-refresh');b.disabled=true;
+ document.getElementById('status').textContent='更新中…(数分かかります)';
+ await fetch('/api/refresh');
+ const t=setInterval(async()=>{const s=await(await fetch('/api/status')).json();
+   document.getElementById('status').textContent=s.log.slice(-1)[0]||'';
+   if(!s.running){clearInterval(t);b.disabled=false;load();}},3000);});
+load();
+</script>
+</body>
+</html>
