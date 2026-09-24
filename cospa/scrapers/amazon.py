@@ -100,7 +100,6 @@ class AmazonScraper(Scraper):
                     price = None
         if not price:
             return None  # no live price -> not purchasable
-        a = it.select_one("a.a-link-normal[href*='/dp/'], a.a-link-normal[href*='/gp/']")
         url = BASE + f"/dp/{asin}"
         ship_el = it.find(string=re.compile(r"通常配送料無料|送料無料"))
         spec_text = " ".join(it.get_text(" ", strip=True).split())[:600]

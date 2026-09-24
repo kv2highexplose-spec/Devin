@@ -16,7 +16,11 @@ def save_listings(items: list[Listing]) -> Path:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     SHOPS_DIR.mkdir(parents=True, exist_ok=True)
     by_shop: dict[str, list[Listing]] = {}
+    seen: set[str] = set()
     for i in items:
+        if i.id in seen:
+            continue
+        seen.add(i.id)
         by_shop.setdefault(i.shop, []).append(i)
     for shop, lst in by_shop.items():
         (SHOPS_DIR / f"{shop}.json").write_text(json.dumps(
@@ -38,10 +42,15 @@ def save_listings(items: list[Listing]) -> Path:
 
 def load_all_items() -> list[dict]:
     items = []
+    seen: set[str] = set()
     if SHOPS_DIR.exists():
         for p in sorted(SHOPS_DIR.glob("*.json")):
             try:
-                items.extend(json.loads(p.read_text())["items"])
+                for i in json.loads(p.read_text())["items"]:
+                    if i.get("id") in seen:
+                        continue
+                    seen.add(i.get("id"))
+                    items.append(i)
             except Exception:
                 continue
     return items

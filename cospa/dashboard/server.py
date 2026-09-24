@@ -67,7 +67,8 @@ class Handler(SimpleHTTPRequestHandler):
                 if vp.exists():
                     vmap = {}
                     for r in json.loads(vp.read_text(encoding="utf-8")).get("results", []):
-                        vmap[r["url"]] = r
+                        if r.get("url"):
+                            vmap[r["url"]] = r
                     for i in d.get("items", []):
                         r = vmap.get(i.get("url"))
                         if r:

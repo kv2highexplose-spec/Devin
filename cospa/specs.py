@@ -23,7 +23,7 @@ def match_cpu(text: str) -> str | None:
     t = norm(text).lower()
     t = t.replace("corei", "core i").replace("core i ", "core i")
     # Intel Core iN - pattern: i7-14650HX / i5 8400 / Core i7 13700
-    m = re.search(r"(?:core\s*)?i([3579])\s*[-–]?\s*(\d{4,5}[a-z0-9]*)(?![a-z0-9])", t)
+    m = re.search(r"(?<![a-z0-9])(?:core\s*)?i([3579])\s*[-–]?\s*(\d{4,5}[a-z0-9]*)(?![a-z0-9])", t)
     if m:
         return _m_int(m.group(1), m.group(2))
     # "Core i3" (10th gen hidden) handled below; plain i3-XXX like i3-N305
@@ -53,7 +53,7 @@ def match_cpu(text: str) -> str | None:
             return key
         return m.group(2)  # fall back to bare model e.g. 4650g
     # Ryzen: "Ryzen 7 9700X" / "Ryzen5 5600G" / "R7 5800X3D" / "Ryzen 9 5950X"
-    m = re.search(r"(?:ryzen\s*(?:[3579])?\s*|r[3579]\s*)(\d{4,5}[a-z0-9]*)(?![a-z0-9])", t)
+    m = re.search(r"(?:ryzen\s*(?:[3579])?\s*|(?<![a-z0-9])r[3579]\s*)(\d{4,5}[a-z0-9]*)(?![a-z0-9])", t)
     if m:
         model = m.group(1)
         if re.match(r"[1-9]\d{3,4}", model):
@@ -238,7 +238,7 @@ def parse_storage(text: str) -> tuple[float | None, str | None]:
     t = norm(text).lower()
     vals = []
     kinds = set()
-    for m in re.finditer(r"(?<![a-z0-9])(\d{1,4})\s*(tb|gb|g|t)(?![a-z0-9])\s*(ssd|hdd|nvme|m\.2|gen\d|pcie|ufs|emmc)?", t):
+    for m in re.finditer(r"(?<![a-z0-9])(\d{1,4})\s*(tb|gb|g)(?![a-z0-9])\s*(ssd|hdd|nvme|m\.2|gen\d|pcie|ufs|emmc)?", t):
         v = float(m.group(1))
         unit = m.group(2)
         if unit.startswith("t"):
@@ -290,6 +290,8 @@ def parse_display(text: str) -> float | None:
     return None
 
 
+IGPU_PAT = re.compile(
+    r"^(uhd|iris|hd\s?graphics|radeon graphics|radeon vega [0-9]|radeon ?\d{3}m|vega (8|11))", re.I)
 PERIPHERAL_PAT = re.compile(
     r"キーボード|keyboard|テンキー|number\s*pad|マウスパッド|ゲーミングマウス|gaming\s*mouse|"
     r"ケーブル|cable\b|アダプタ|adapter|変換アダプタ|ハブ|\bhub\b|ヘッドセット|headset|"
@@ -300,7 +302,8 @@ PERIPHERAL_PAT = re.compile(
     r"スタンド|stand\b|マウント|mount\b|ブラケット|bracket|ピンセット|ネジ|screw|"
     r"取り付け|取付|交換用|交換部品|修理用|保護ケース|ケースカバー|インナーケース|"
     r"ルーター|router|アンテナ|antenna|リムーバー|クリーナー|掃除|セット(?!.*搭載)|"
-    r"対応品|for\s*mac\s*(mini|studio|pro)|スキンシール|ケーブルボックス|延長コード",
+    r"対応品|for\s*mac\s*(mini|studio|pro)|スキンシール|ケーブルボックス|延長コード|"
+    r"スマートフォン|smartphone|iphone|android|xperia|galaxy|pixel|タブレット|tablet|ipad",
     re.I)
 PC_SIGNAL_PAT = re.compile(
     r"パソコン|デスクトップpc|ノートpc|ノートパソコン|ゲーミングpc|ワークステーション|"
@@ -328,8 +331,10 @@ def parse_specs(text: str, category_hint: str = "") -> dict:
     if not cat:
         if disp:
             cat = "laptop"
-        elif gpu and not cpu and gpu in GPU:
+        elif gpu and gpu in GPU and not IGPU_PAT.match(gpu) and not PC_SIGNAL_PAT.search(text):
             cat = "gpu"
+        elif cpu and PC_SIGNAL_PAT.search(text):
+            cat = "laptop" if disp else "desktop"
         elif ram and re.search(r"メモリ|memory|(?<!g)ddr[345]", t):
             cat = "ram"
         elif storage and re.search(r"ssd|m\.2|nvme|hdd|ストレージ", t):
@@ -343,12 +348,13 @@ def parse_specs(text: str, category_hint: str = "") -> dict:
     # demote pc-category to a part when the name is just a bare chip
     if cat in ("desktop", "laptop") and not PC_SIGNAL_PAT.search(text):
         bare = not (ram and storage) and not disp
-        if gpu and gpu in GPU and not cpu and bare:
+        if gpu and gpu in GPU and not IGPU_PAT.match(gpu) and not cpu and bare:
             cat = "gpu"
         elif cpu and not (gpu and gpu in GPU) and bare:
             cat = "cpu"
-    if PERIPHERAL_PAT.search(text) and not ((ram and storage) or disp):
+    if PERIPHERAL_PAT.search(text) and not (ram and storage):
         cat = "peripheral"
+    cat = {"memory": "ram", "mb": "motherboard", "mobo": "motherboard"}.get(cat, cat)
     return {
         "cpu": cpu, "gpu": gpu, "ram_gb": ram,
         "storage_gb": storage, "storage_type": storage_type,

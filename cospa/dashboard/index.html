@@ -165,7 +165,7 @@ function row(i,cells){
  if(i.price_drop>=5)badges.push(`<span class="badge b-drop">値下げ-${i.price_drop}%</span>`);
  if(i.in_stock===false||i.purchasable===false)badges.push('<span class="badge b-out">在庫なし</span>');
  const v=i.verify;
- if(v){
+ if(v&&(v.purchasable_now!=null||v.verified_price!=null||v.in_stock!=null||v.cart_enabled!=null)){
    if(v.purchasable_now&&v.price_match!==false)badges.push('<span class="badge b-ok">購入確認済</span>');
    else if(v.price_match===false)badges.push('<span class="badge b-warn">価格相違</span>');
    else badges.push('<span class="badge b-warn">確認不可</span>');
@@ -174,14 +174,14 @@ function row(i,cells){
  return `<tr${cls}><td>${badges.join('')}<a href="${i.url}" target="_blank">${i.name}</a></td>${cells}</tr>`;
 }
 function renderRank(items){
- const ok=items.filter(i=>metricVal(i)&&!(i.in_stock===false||i.purchasable===false));
+ const ok=items.filter(i=>metricVal(i)&&!(i.in_stock===false||i.purchasable===false)&&i.category!=='peripheral'&&i.category!=='other');
  ok.sort((a,b)=>metricVal(b)-metricVal(a));
  const head=`<tr><th>商品</th><th class=num>価格</th><th class=num>値/万円</th><th class=num>score</th></tr>`;
  document.getElementById('rank-table').innerHTML=head+ok.slice(0,60).map(i=>row(i,
   `<td class=num>${fmtYen(i.effective_price||i.price)}</td><td class=num><b>${fmt(metricVal(i))}</b></td><td class=num>${fmt(perf(i,METRIC))}</td>`)).join('');
 }
 function renderDeals(items){
- const ok=items.filter(i=>(i.deal_score||0)>=1.2&&!(i.in_stock===false||i.purchasable===false));
+ const ok=items.filter(i=>(i.deal_score||0)>=1.2&&!(i.in_stock===false||i.purchasable===false)&&i.category!=='peripheral');
  ok.sort((a,b)=>b.deal_score-a.deal_score);
  const head=`<tr><th>商品</th><th class=num>価格</th><th class=num>deal</th><th>CPU/GPU</th></tr>`;
  document.getElementById('deal-table').innerHTML=head+ok.slice(0,60).map(i=>row(i,

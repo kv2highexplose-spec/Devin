@@ -37,11 +37,12 @@ def reparse():
     items = [Listing.from_dict(d) for d in store.load_listings()]
     n = 0
     for l in items:
-        extra = " ".join(str(v) for v in (l.raw or {}).values() if isinstance(v, (str, int, float)))
+        spec_keys = {"spec", "spec_kv", "spec_table", "series"}
+        extra = " ".join(str(v) for k, v in (l.raw or {}).items() if k in spec_keys and isinstance(v, (str, int, float)))
         text = f"{l.name} {extra}"
         sp = parse_specs(text, category_hint="")
         if not sp.get("category"):
-            sp["category"] = l.category
+            sp["category"] = {"memory": "ram", "mb": "motherboard", "mobo": "motherboard"}.get(l.category, l.category)
         # keep scraper-provided fields
         for k in ("cpu_score_src", "gpu_score_src"):
             if (l.specs or {}).get(k):
