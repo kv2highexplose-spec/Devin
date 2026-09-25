@@ -73,6 +73,60 @@ def analyze(items: list[Listing] | None = None):
     return out
 
 
+def export_csv(path: Path | None = None):
+    """Flatten analysis.json into an Excel-friendly CSV (utf-8-sig)."""
+    import csv
+    ap = DATA_DIR / "analysis.json"
+    if not ap.exists():
+        print("run analyze first")
+        return
+    d = json.loads(ap.read_text())
+    vmap = {}
+    vp = DATA_DIR / "verify.json"
+    if vp.exists():
+        for r in json.loads(vp.read_text()).get("results", []):
+            if r.get("url"):
+                vmap[r["url"]] = r
+    out = path or (DATA_DIR / "export.csv")
+    cols = [
+        "製品名", "ショップ", "カテゴリ", "新品・中古", "実売価格", "送料", "実質価格",
+        "在庫", "購入可能", "検証済み購入可否", "検証価格", "価格一致",
+        "CPU", "CPUスコア", "CPU TDP(W)", "CPU発売年",
+        "GPU", "GPUスコア", "GPU TDP(W)", "GPU発売年",
+        "RAM(GB)", "ストレージ(GB)", "ストレージ種別", "VRAM(GB)", "画面(型)",
+        "CPU点/万円", "GPU点/万円", "VRAM・RAM GB/万円", "RAM GB/万円", "電力効率/万円",
+        "割安スコア", "値下げ%", "前回最安値", "フラグ", "OS", "在庫メモ", "価格種別", "URL", "取得日時",
+    ]
+    def row(i):
+        sp = i.get("specs") or {}
+        v = vmap.get(i.get("url"), {})
+        cond = {"new": "新品", "used": "中古", "outlet": "アウトレット", "junk": "ジャンク"}.get(i.get("condition"), i.get("condition") or "")
+        ins = {True: "在庫あり", False: "在庫なし"}.get(i.get("in_stock"), "")
+        pur = {True: "可", False: "不可"}.get(i.get("purchasable"), "")
+        pnv = {True: "可", False: "不可"}.get(v.get("purchasable_now"), "")
+        pm = {True: "一致", False: "不一致"}.get(v.get("price_match"), "")
+        return [
+            i.get("name"), i.get("shop"), i.get("category"), cond,
+            i.get("price"), i.get("shipping"), i.get("effective_price"),
+            ins, pur, pnv, v.get("verified_price"), pm,
+            sp.get("cpu"), i.get("cpu_score"), i.get("cpu_tdp"), i.get("cpu_year"),
+            sp.get("gpu"), i.get("gpu_score"), i.get("gpu_tdp"), i.get("gpu_year"),
+            sp.get("ram_gb"), sp.get("storage_gb"), sp.get("storage_type"),
+            i.get("vram_gb") or sp.get("vram_gb"), sp.get("display"),
+            i.get("cpu_pts_per_man"), i.get("gpu_pts_per_man"), i.get("llm_gb_per_man"),
+            i.get("ram_gb_per_man"), i.get("perf_per_yen_w"),
+            i.get("deal_score"), i.get("price_drop"), i.get("prev_price"),
+            ",".join(i.get("flags") or []), sp.get("os"), i.get("stock_note"),
+            i.get("price_kind"), i.get("url"), i.get("fetched_at"),
+        ]
+    with out.open("w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(cols)
+        for i in d["items"]:
+            w.writerow(row(i))
+    print(f"{len(d['items'])} rows -> {out}")
+
+
 def verify(limit: int = 60):
     """Re-check top deals on their real product pages (price/stock/cart button)."""
     from cospa.verify import verify_listing
@@ -124,6 +178,8 @@ def main():
         analyze()
     elif cmd == "verify":
         verify(int(only[0]) if only else 60)
+    elif cmd == "csv":
+        export_csv(Path(only[0]) if only else None)
     elif cmd == "serve":
         from cospa.dashboard.server import serve
         serve()
