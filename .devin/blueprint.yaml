@@ -1,0 +1,28 @@
+initialize:
+  - name: install deps
+    run: |
+      sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk > /dev/null
+      pip3 install requests beautifulsoup4 playwright
+      mkdir -p ~/.local/bin ~/.fonts
+      if [ ! -x ~/.local/bin/google-chrome ]; then
+        curl -sLo /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        (cd /tmp && ar x chrome.deb && tar xf data.tar.xz)
+        cp -r /tmp/opt/google/chrome ~/.local/chrome
+        ln -sf ~/.local/chrome/google-chrome ~/.local/bin/google-chrome
+      fi
+      fc-cache -f ~/.fonts > /dev/null 2>&1 || true
+maintenance: |
+  pip3 install -r requirements.txt
+knowledge:
+  - name: run
+    contents: |
+      python3 run.py scrape      # all shops (or: scrape <shop>)
+      python3 run.py reparse     # re-derive specs from names + analyze
+      python3 run.py verify 60   # re-check top deals on real product pages
+      python3 run.py serve       # dashboard on :8000
+  - name: lint
+    contents: |
+      python3 -m pyflakes cospa/ run.py; python3 -m compileall -q cospa run.py
+  - name: notes
+    contents: |
+      data/ is gitignored. Scrapers need Chrome at ~/.local/bin/google-chrome (Playwright executable_path). Amazon requires i18n-prefs=JPY cookie or results are USD international listings.
