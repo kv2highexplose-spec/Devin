@@ -61,3 +61,27 @@ python3 run.py serve             # http://localhost:8000 ダッシュボード
 
 **注意**: 「カートに入れる」等のボタンはDOMの有効状態を読み取るのみで、
 実際の注文・決済は一切行いません。
+
+---
+
+## Windows向け Everyday Tools
+
+`windows_apps/` には、Python 3 標準ライブラリだけで動く4つのデスクトップツールがあります。
+Windows 10/11 で Python 3（`py` ランチャーと Tkinter を含む）をインストール後、
+`windows_apps/Start Everyday Tools.bat` をダブルクリックしてください。
+またはリポジトリのルートから `py -3 -m windows_apps` で起動できます。
+
+| ツール | 用途 |
+|---|---|
+| Rename files | ファイル名の検索・置換、接頭辞・接尾辞、連番をプレビューして一括改名 |
+| Sort folder | 選択したフォルダ直下のファイルを種類別に分類 |
+| Find duplicates | サブフォルダを含めて同一内容のファイルを検出し、CSVに出力（削除しない） |
+| Text tools | 行の空白除去、空行除去、重複除去、並べ替え、空白圧縮とクリップボード操作 |
+
+`py -3 -m windows_apps rename` のように `rename` / `sort` / `duplicates` /
+`text` を指定すると対応ツールを開いた状態で起動します。ファイルを変更する
+ツールは移動先をプレビューし、確認してから実行します。同じ画面で最後の操作を
+元に戻せます（アプリを閉じると履歴は消えます）。移動先に同名ファイルがある場合は
+処理を止めます。分類は選択したフォルダの直下だけが対象です。
+
+開発時のロジックテスト: `python -m unittest discover -s tests`。
