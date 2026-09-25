@@ -1,0 +1,11 @@
+{
+  "appId": "ai.devin.midipocket",
+  "appName": "MIDI Pocket",
+  "webDir": "../site",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

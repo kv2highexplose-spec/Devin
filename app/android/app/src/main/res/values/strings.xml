@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MIDI Pocket</string>
+    <string name="title_activity_main">MIDI Pocket</string>
+    <string name="package_name">ai.devin.midipocket</string>
+    <string name="custom_url_scheme">ai.devin.midipocket</string>
+</resources>

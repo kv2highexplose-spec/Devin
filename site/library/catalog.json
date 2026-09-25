@@ -1,0 +1,89 @@
+{
+ "version": 2,
+ "count": 1008,
+ "seed": 20260925,
+ "genres": {
+  "trance": {
+   "count": 84
+  },
+  "jazz": {
+   "count": 84
+  },
+  "bossa": {
+   "count": 84
+  },
+  "chiptune": {
+   "count": 84
+  },
+  "game": {
+   "count": 84
+  },
+  "orchestra": {
+   "count": 84
+  },
+  "piano": {
+   "count": 84
+  },
+  "waltz": {
+   "count": 84
+  },
+  "synthwave": {
+   "count": 84
+  },
+  "eurobeat": {
+   "count": 84
+  },
+  "ambient": {
+   "count": 84
+  },
+  "lofi": {
+   "count": 84
+  }
+ },
+ "parts": [
+  {
+   "file": "catalog/part-000.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-001.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-002.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-003.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-004.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-005.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-006.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-007.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-008.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-009.json",
+   "count": 100
+  },
+  {
+   "file": "catalog/part-010.json",
+   "count": 8
+  }
+ ]
+}
