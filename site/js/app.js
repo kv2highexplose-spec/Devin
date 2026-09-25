@@ -82,8 +82,7 @@ const player = {
       await this.ctx.audioWorklet.addModule("vendor/spessasynth/spessasynth_processor.min.js");
       this.synth = new WorkletSynthesizer(this.ctx);
       this.seq = new Sequencer(this.synth, { skipToFirstNoteOn: true });
-      this.seq.loopCount = 1;
-      this.seq.eventHandler.addEvent("timeChange", "ui", (e) => onTime(e.time));
+      this.seq.loopCount = 0;
       this.seq.eventHandler.addEvent("songEnded", "ui", () => onSongEnded());
       this.seq.eventHandler.addEvent("midiError", "ui", (e) => toast("MIDI読み込みエラー: " + (e.error?.message || "不明")));
     }
@@ -381,11 +380,16 @@ async function fetchMidi(t) {
   return res.arrayBuffer();
 }
 
-function onTime(time) {
-  if (state.seekLock) return;
-  el.psCur.textContent = fmtTime(time);
-  if (state.duration > 0) el.psSeek.value = Math.min(1000, Math.round((time / state.duration) * 1000));
+// timeChange doesn't fire periodically, so the seek bar tracks via rAF
+function tickUi() {
+  if (player.seq && !state.seekLock) {
+    const time = player.seq.currentTime;
+    el.psCur.textContent = fmtTime(time);
+    if (state.duration > 0) el.psSeek.value = Math.min(1000, Math.round((time / state.duration) * 1000));
+  }
+  requestAnimationFrame(tickUi);
 }
+requestAnimationFrame(tickUi);
 
 function onSongEnded() {
   if (state.repeat === "one") { player.seq.currentTime = 0; player.seq.play(); return; }
