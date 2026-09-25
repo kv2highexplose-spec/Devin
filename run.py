@@ -73,8 +73,9 @@ def analyze(items: list[Listing] | None = None):
     return out
 
 
-def export_csv(path: Path | None = None):
-    """Flatten analysis.json into an Excel-friendly CSV (utf-8-sig)."""
+def export_csv(path: Path | None = None, pc_only: bool = False):
+    """Flatten analysis.json into an Excel-friendly CSV (utf-8-sig).
+    pc_only: drop non-PC rows (peripherals, unclassified, no-price) for cospa comparison."""
     import csv
     ap = DATA_DIR / "analysis.json"
     if not ap.exists():
@@ -87,7 +88,7 @@ def export_csv(path: Path | None = None):
         for r in json.loads(vp.read_text()).get("results", []):
             if r.get("url"):
                 vmap[r["url"]] = r
-    out = path or (DATA_DIR / "export.csv")
+    out = path or (DATA_DIR / ("export_pc.csv" if pc_only else "export.csv"))
     cols = [
         "製品名", "ショップ", "カテゴリ", "新品・中古", "実売価格", "送料", "実質価格",
         "在庫", "購入可能", "検証済み購入可否", "検証価格", "価格一致",
@@ -119,12 +120,20 @@ def export_csv(path: Path | None = None):
             ",".join(i.get("flags") or []), sp.get("os"), i.get("stock_note"),
             i.get("price_kind"), i.get("url"), i.get("fetched_at"),
         ]
+    items = d["items"]
+    if pc_only:
+        items = [i for i in items
+                 if i.get("category") not in ("peripheral", "other", "")
+                 and (i.get("effective_price") or i.get("price") or 0) >= 1000
+                 and i.get("name")]
+        items.sort(key=lambda i: (i.get("category") or "", -(i.get("deal_score") or 0),
+                                  i.get("effective_price") or i.get("price") or 0))
     with out.open("w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
         w.writerow(cols)
-        for i in d["items"]:
+        for i in items:
             w.writerow(row(i))
-    print(f"{len(d['items'])} rows -> {out}")
+    print(f"{len(items)} rows -> {out}")
 
 
 def verify(limit: int = 60):
@@ -180,6 +189,8 @@ def main():
         verify(int(only[0]) if only else 60)
     elif cmd == "csv":
         export_csv(Path(only[0]) if only else None)
+    elif cmd in ("csv-pc", "csv_pc"):
+        export_csv(Path(only[0]) if only else None, pc_only=True)
     elif cmd == "serve":
         from cospa.dashboard.server import serve
         serve()
