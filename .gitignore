@@ -2,3 +2,34 @@ __pycache__/
 *.pyc
 data/
 *.log
+
+# --- MIDI Pocket ---
+node_modules/
+dist/
+*.apk
+*.aab
+*.keystore
+
+# Gradle / Android build outputs
+.gradle/
+**/build/
+local.properties
+.cxx/
+.cxx-cache/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Capacitor generated dirs (keep android project sources, ignore generated)
+app/android/.gradle/
+app/android/.idea/
+app/android/app/build/
+app/android/build/
+app/android/capacitor-cordova-android-plugins/build/
+app/android/capacitor-cordova-android-plugins/.gradle/
+
+# test artifacts
+/tmp/
+.pytest_cache/

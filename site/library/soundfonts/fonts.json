@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "note": "bundled fonts must have redistributionAllowed=true; see docs/soundfonts.md for the full research matrix",
+  "fonts": [
+    {
+      "id": "generaluser",
+      "name": "GeneralUser GS 1.471",
+      "file": "generaluser-gs-1.471.sf2",
+      "sourceUrl": "https://www.schristiancollins.com/generaluser.php",
+      "license": "GeneralUser GS License v2.0",
+      "licenseText": "Use in software projects permitted; bank may be modified and repackaged.",
+      "redistributionAllowed": true,
+      "sizeMB": 29.8,
+      "tags": ["gm", "gs", "general", "reference"],
+      "notes": "基準フォント。GM+GS互換・軽量でバランスが良い。推奨のデフォルト。"
+    },
+    {
+      "id": "fluid",
+      "name": "FluidR3Mono GM",
+      "file": "fluidr3mono-gm.sf3",
+      "sourceUrl": "https://github.com/musescore/MuseScore/blob/2.1/share/sound/FluidR3Mono_GM.sf3",
+      "license": "MIT",
+      "licenseText": "Fluid (R3) © Frank Wen, MIT license.",
+      "redistributionAllowed": true,
+      "sizeMB": 13.9,
+      "tags": ["gm", "general", "hq", "acoustic"],
+      "notes": "Frank Wen による高音質GMのモノラル圧縮版。ピアノ・オーケストラ系に強い。"
+    },
+    {
+      "id": "timgm",
+      "name": "TimGM6mb",
+      "file": "timgm6mb.sf2",
+      "sourceUrl": "https://deb.debian.org/debian/pool/main/t/timgm6mb-soundfont/",
+      "license": "GPL-2.0",
+      "licenseText": "© Tim Brechbill, GNU GPL v2 (Debian main).",
+      "redistributionAllowed": true,
+      "sizeMB": 5.7,
+      "tags": ["gm", "lightweight", "fast"],
+      "notes": "6MBの軽量GM。起動が最速で省メモリ。古い端末・即試聴向け。"
+    },
+    {
+      "id": "chippocket",
+      "name": "Chip Pocket",
+      "file": "chippocket.sf2",
+      "sourceUrl": "repo:tools/mksf2.py",
+      "license": "CC0-1.0",
+      "licenseText": "Fully generated in-repo by tools/mksf2.py — no sampled material, no rights encumbrance.",
+      "redistributionAllowed": true,
+      "sizeMB": 0.29,
+      "tags": ["chip", "retro", "8bit", "chiptune", "synth", "tiny"],
+      "notes": "本リポジトリでプログラム生成したオリジナルチップフォント。パルス波/三角波/ノイズのみ。チップチューン・ゲームBGMに最適。0.3MBで最軽量。"
+    }
+  ]
+}

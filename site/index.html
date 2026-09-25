@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101418">
+<title>MIDI Pocket</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/app.css">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-row">
+    <h1 class="appname">MIDI Pocket</h1>
+    <button id="btnAddFiles" class="iconbtn" title="MIDI / SoundFont を追加" aria-label="ファイルを追加">＋</button>
+  </div>
+  <div class="searchrow">
+    <input id="searchBox" type="search" placeholder="曲名・タグで検索" autocomplete="off" inputmode="search">
+    <button id="btnShuffleAll" class="chip chip-action" title="全曲シャッフル再生">🎲</button>
+    <button id="btnFilter" class="chip chip-action" title="絞り込み">絞込</button>
+  </div>
+  <nav id="genreChips" class="chips" aria-label="ジャンル"></nav>
+</header>
+
+<main>
+  <div id="listInfo" class="listinfo">読み込み中…</div>
+  <ol id="trackList" class="tracklist"></ol>
+  <div id="listSentinel" class="sentinel"></div>
+</main>
+
+<div id="miniPlayer" class="miniplayer hidden" role="button" tabindex="0" aria-label="プレイヤーを開く">
+  <div id="mpGenreDot" class="mp-dot"></div>
+  <div class="mp-meta">
+    <div id="mpTitle" class="mp-title">—</div>
+    <div id="mpSub" class="mp-sub">—</div>
+  </div>
+  <button id="mpPrev" class="iconbtn" aria-label="前の曲">⏮</button>
+  <button id="mpPlay" class="iconbtn big" aria-label="再生/停止">▶</button>
+  <button id="mpNext" class="iconbtn" aria-label="次の曲">⏭</button>
+</div>
+
+<section id="playerSheet" class="sheet hidden" aria-label="プレイヤー">
+  <div class="sheet-grip" id="sheetGrip"></div>
+  <div class="sheet-head">
+    <div class="sheet-head-meta">
+      <div id="psTitle" class="ps-title">—</div>
+      <div id="psMeta" class="ps-meta">—</div>
+      <div id="psTags" class="ps-tags"></div>
+    </div>
+    <button id="psFav" class="iconbtn big" aria-label="お気に入り">♡</button>
+  </div>
+  <div class="seekrow">
+    <span id="psCur" class="time">0:00</span>
+    <input id="psSeek" type="range" min="0" max="1000" value="0" step="1" aria-label="シーク">
+    <span id="psDur" class="time">0:00</span>
+  </div>
+  <div class="temprow">
+    <label for="psTempo" class="time">速度 <span id="psTempoVal">100%</span></label>
+    <input id="psTempo" type="range" min="25" max="200" value="100" step="5" aria-label="速度">
+  </div>
+  <div class="ctlrow">
+    <button id="psShuffle" class="iconbtn" aria-label="シャッフル">🔀</button>
+    <button id="psPrev" class="iconbtn" aria-label="前の曲">⏮</button>
+    <button id="psPlay" class="iconbtn xbig" aria-label="再生/停止">▶</button>
+    <button id="psNext" class="iconbtn" aria-label="次の曲">⏭</button>
+    <button id="psRepeat" class="iconbtn" aria-label="リピート">🔁</button>
+  </div>
+  <button id="sfButton" class="sfbtn">
+    <span class="sf-label">SoundFont</span>
+    <span id="sfName" class="sf-name">読み込み中…</span>
+    <span class="sf-open">変更</span>
+  </button>
+  <div id="sfRecommend" class="sf-recommend hidden"></div>
+</section>
+
+<section id="sfSheet" class="sheet hidden" aria-label="SoundFont 選択">
+  <div class="sheet-grip"></div>
+  <h2 class="sheet-h">SoundFont</h2>
+  <ul id="sfList" class="sflist"></ul>
+  <button id="btnAddFont" class="btn-secondary">＋ SF2 / SF3 / DLS を追加</button>
+</section>
+
+<section id="filterSheet" class="sheet hidden" aria-label="絞り込み">
+  <div class="sheet-grip"></div>
+  <h2 class="sheet-h">絞り込み</h2>
+  <h3 class="sheet-h2">ジャンル</h3>
+  <div id="fsGenres" class="chips wrap"></div>
+  <h3 class="sheet-h2">タグ</h3>
+  <div id="fsTags" class="chips wrap"></div>
+  <h3 class="sheet-h2">並び替え</h3>
+  <div id="fsSort" class="chips wrap">
+    <button class="chip" data-sort="default">標準</button>
+    <button class="chip" data-sort="title">曲名</button>
+    <button class="chip" data-sort="bpm">BPM</button>
+    <button class="chip" data-sort="duration">長さ</button>
+  </div>
+  <button id="fsClear" class="btn-secondary">クリア</button>
+</section>
+
+<div id="scrim" class="scrim hidden"></div>
+<div id="toast" class="toast hidden"></div>
+
+<input id="fileMidi" type="file" accept=".mid,.midi,.smf,audio/midi" multiple hidden>
+<input id="fileFont" type="file" accept=".sf2,.sf3,.dls,.sfogg,*/*" multiple hidden>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
