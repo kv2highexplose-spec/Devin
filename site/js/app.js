@@ -86,7 +86,14 @@ const player = {
       this.seq.eventHandler.addEvent("songEnded", "ui", () => onSongEnded());
       this.seq.eventHandler.addEvent("midiError", "ui", (e) => toast("MIDI読み込みエラー: " + (e.error?.message || "不明")));
     }
-    if (this.ctx.state === "suspended") await this.ctx.resume();
+    if (this.ctx.state === "suspended") {
+      await this.ctx.resume();
+      // resume() can be denied outside a gesture window — retry on next tap
+      if (this.ctx.state === "suspended") {
+        toast("もう一度タップで音声を有効化");
+        document.addEventListener("pointerdown", () => this.ctx.resume(), { once: true });
+      }
+    }
     await this.ensureFont();
     return this;
   },
@@ -691,6 +698,13 @@ document.addEventListener("visibilitychange", () => {
     player.ctx.resume();
   }
 });
+
+// every touch is a fresh gesture — retry a stuck-suspended AudioContext
+for (const ev of ["pointerdown", "touchend"]) {
+  document.addEventListener(ev, () => {
+    if (player.ctx?.state === "suspended") player.ctx.resume();
+  }, { passive: true });
+}
 
 /* ---------------- boot ---------------- */
 const IS_NATIVE = !!window.Capacitor?.isNativePlatform?.();
