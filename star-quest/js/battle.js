@@ -396,7 +396,11 @@ function makeBattleScene(zone) {
       if (Input.p("left") || Input.p("up")) { B.selTarget = alive[(cur + alive.length - 1) % alive.length]; AU.sfx("cursor"); }
       if (Input.p("right") || Input.p("down")) { B.selTarget = alive[(cur + 1) % alive.length]; AU.sfx("cursor"); }
       if (Input.p("cancel")) { B.phase = "cmd"; AU.sfx("cancel"); }
-      if (Input.p("ok")) { B.pendingCmd = { type: "attack", target: B.selTarget }; AU.sfx("ok"); startRound(); }
+      if (Input.p("ok")) {
+        if (B.pendingCmd && B.pendingCmd.type === "spell") B.pendingCmd.target = B.selTarget;
+        else B.pendingCmd = { type: "attack", target: B.selTarget };
+        AU.sfx("ok"); startRound();
+      }
     },
     spell() {
       const sp = G.player.spells;
