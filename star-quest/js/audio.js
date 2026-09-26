@@ -7,8 +7,9 @@
 
 const AU = {
   ctx: null, master: null, muted: false,
-  song: null, seqTimer: null, nextStep: 0, stepIdx: 0,
+  song: null, wantBgm: null, seqTimer: null, nextStep: 0, stepIdx: 0,
 };
+try { AU.muted = localStorage.getItem("starquest_mute") === "1"; } catch (e) {}
 
 AU.init = function () {
   if (AU.ctx) return;
@@ -18,6 +19,7 @@ AU.init = function () {
     AU.master.gain.value = 0.55;
     AU.master.connect(AU.ctx.destination);
   } catch (e) { /* audio unavailable */ }
+  if (AU.ctx && AU.wantBgm) AU.bgm(AU.wantBgm);
 };
 
 AU.setMuted = function (m) {
@@ -176,9 +178,10 @@ const SONGS = {
 };
 
 AU.bgm = function (name) {
-  if (!AU.ctx) return;
+  if (!AU.ctx) { AU.wantBgm = name; return; } // init前の要求を保持
   if (AU.song === name) return;
   AU.stopBgm();
+  AU.wantBgm = name;
   const s = SONGS[name];
   if (!s) return;
   AU.song = name;
@@ -237,5 +240,5 @@ AU.bgm = function (name) {
 
 AU.stopBgm = function () {
   if (AU.seqTimer) { clearInterval(AU.seqTimer); AU.seqTimer = null; }
-  AU.song = null;
+  AU.song = null; AU.wantBgm = null;
 };

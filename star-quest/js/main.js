@@ -20,7 +20,7 @@ const G = {
 
 function newPlayer() {
   return {
-    lv: 1, exp: 0, gold: 30, hp: 20, mp: 0,
+    lv: 1, exp: 0, gold: 30, hp: baseStats(1).maxhp, mp: 0,
     weapon: "w_stick", armor: "a_cloth",
     bag: ["w_stick", "a_cloth"],
     items: { potion: 1 },

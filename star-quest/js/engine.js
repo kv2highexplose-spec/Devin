@@ -19,6 +19,7 @@ const KEYMAP = {
   KeyM: "mute",
 };
 window.addEventListener("keydown", (e) => {
+  if (typeof AU !== "undefined") AU.init(); // ユーザージェスチャで AudioContext を有効化
   const k = KEYMAP[e.code];
   if (!k) return;
   e.preventDefault();

@@ -28,6 +28,7 @@ function drawStars(ctx, t, scroll) {
 /* ---------------- タイトル ---------------- */
 function makeTitleScene() {
   const T = { opaque: true, sel: 0, t: 0 };
+  AU.bgm("title");
   const opts = [];
   opts.push("はじめから");
   if (hasSave()) opts.push("つづきから");
@@ -102,8 +103,8 @@ function makeTitleScene() {
 /* ---------------- ゲームオーバー ---------------- */
 function makeGameOverScene() {
   const S = { opaque: true, t: 0 };
-  AU.stopBgm();
   AU.sfx("gameover");
+  AU.bgm("gameover");
   S.update = function () {
     S.t++;
     if (S.t > 80 && Input.p("ok")) {
@@ -139,8 +140,8 @@ function makeGameOverScene() {
 /* ---------------- エンディング ---------------- */
 function makeEndingScene() {
   const E = { opaque: true, t: 0, phase: 0, phaseT: 0 };
-  AU.stopBgm();
   AU.sfx("victory");
+  AU.bgm("ending");
   saveGame(); // セーブしておく(ボス撃破済みフラグ込み)
 
   const CREDITS = [
